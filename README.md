@@ -9,8 +9,10 @@ Projeto desenvolvido em java com foco em Programação Orientada a Objetos.
 
 ## Tecnologias utilizadas
 - Java
-- ArrayList
-- POO
+- POO (Programação Orientada a Objetos)
+- Tratamento de exceções (try/catch)
+- Estruturas de dados (ArrayList)
+- Git e GitHub
 
 ## Autor
 Elison Sousa
