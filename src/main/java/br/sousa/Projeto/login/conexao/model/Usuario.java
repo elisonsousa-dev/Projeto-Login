@@ -1,4 +1,15 @@
+package br.sousa.Projeto.login.conexao.model;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+@Entity
 public class Usuario {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String nome;
     private String email;
     private String senha;
@@ -26,14 +37,12 @@ public class Usuario {
     public void setSenha(String senha) {
         this.senha = senha;
     }
-    public void cadastrarUsuario(String nome, String email , String senha){
-        this.setNome(nome);
-        this.setEmail(email);
-        this.setSenha(senha);
+
+    public Long getId() {
+        return id;
     }
 
-    public boolean autenticar(String email , String senha){
-        return email.equals(getEmail()) && senha.equals(getSenha());
+    public void setId(Long id) {
+        this.id = id;
     }
-
 }
