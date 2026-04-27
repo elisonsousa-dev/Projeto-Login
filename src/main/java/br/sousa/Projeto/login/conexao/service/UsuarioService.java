@@ -6,6 +6,7 @@ import br.sousa.Projeto.login.conexao.dto.UsuarioDto;
 import br.sousa.Projeto.login.conexao.model.Usuario;
 import br.sousa.Projeto.login.conexao.repository.UsuarioRepository;
 import br.sousa.Projeto.login.conexao.util.SenhaUtil;
+import br.sousa.Projeto.login.conexao.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,24 +35,26 @@ public class UsuarioService {
            return true;
        }
     }
-    public Usuario login(String email, String senha){
+    public String login(String email, String senha){
 
         Usuario usuario = repo.findByEmail(email);
 
         if(usuario == null){
             return null;
         }
+        if(SenhaUtil.verificar(senha, usuario.getSenha())){
 
-     boolean senhaValida = SenhaUtil.verificar(senha, usuario.getSenha());
-
-        if(senhaValida){
-
-            return usuario;
+            return TokenUtil.gerarToken(usuario.getEmail());
         }
             return null;
     }
-    public void delete(long id) {
-        repo.deleteById(id);
+    public void delete(String email) {
+        Usuario usuario = repo.findByEmail(email);
+
+        if(usuario != null){
+
+            repo.delete(usuario);
+        }
 
     }
     public List<ResponseDto> lista(){

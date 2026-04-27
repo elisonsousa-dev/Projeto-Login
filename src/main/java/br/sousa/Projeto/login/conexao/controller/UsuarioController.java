@@ -1,31 +1,31 @@
 package br.sousa.Projeto.login.conexao.controller;
 
-import br.sousa.Projeto.login.conexao.dto.ResponseDto;
 import br.sousa.Projeto.login.conexao.dto.UsuarioDto;
-import br.sousa.Projeto.login.conexao.model.Usuario;
 import br.sousa.Projeto.login.conexao.service.UsuarioService;
 
+import br.sousa.Projeto.login.conexao.util.AuthUtil;
 import br.sousa.Projeto.login.conexao.util.Validacoes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+
 
 
 @RestController
 @RequestMapping("/usuarios")
 public class UsuarioController {
     @Autowired
-private UsuarioService service;
+    private UsuarioService service;
     @Autowired
-private Validacoes validador;
+    private Validacoes validador;
+    @Autowired
+    private AuthUtil authUtil;
 
 boolean senhaValida;
 boolean emailValido;
 
     @PostMapping("/cadastro")
      public ResponseEntity<String> cadastrar(@RequestBody UsuarioDto usuario){
-
         emailValido = validador.validarEmail(usuario.getEmail());
 
         if(!emailValido){
@@ -53,6 +53,7 @@ boolean emailValido;
     public ResponseEntity<String> login(@RequestBody UsuarioDto request){
 
         emailValido = validador.validarEmail(request.getEmail());
+
         if(!emailValido){
             return ResponseEntity.badRequest().body("E-mail invalido!");
         }
@@ -63,22 +64,33 @@ boolean emailValido;
             return ResponseEntity.badRequest().body("Senha invalida!");
         }
 
-        Usuario ok = service.login(request.getEmail(), request.getSenha());
+        String token = service.login(request.getEmail(), request.getSenha());
 
-        if(ok == null){
+        if(token == null){
             return ResponseEntity.badRequest().body("E-mail ou senha invalido! Tente novamente.");
         }else {
-            return ResponseEntity.ok("Logado!");
+            return ResponseEntity.ok(token);
         }
     }
-     @GetMapping("/list")
-     public List<ResponseDto> list(){
-        return service.lista();
+     @GetMapping("/usuarios")
+     public ResponseEntity<?> heard(@RequestHeader("Authorization") String hearder){
+
+        String email = authUtil.validarHearder(hearder);
+
+        if(email == null){
+            return ResponseEntity.status(401).body("Usuário não autorizado!");
+        }
+        return ResponseEntity.ok(service.lista());
      }
 
-     @DeleteMapping("/{id}")
-     public ResponseEntity<String> delete(@PathVariable Long id){
-          service.delete(id);
+     @DeleteMapping("/me")
+     public ResponseEntity<String> delete(@RequestHeader("Authorization") String hearder){
+        String token = authUtil.validarHearder(hearder);
+
+        if(token == null){
+            return ResponseEntity.status(401).body("O usuário não existe!");
+        }
+        service.delete(token);
              return ResponseEntity.ok("Conta excluida!");
      }
 
