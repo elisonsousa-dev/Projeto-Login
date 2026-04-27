@@ -10,7 +10,7 @@ public class AuthUtil {
             return null;
         }
         // Extrair o token
-        String token = hearder.replace("Bearer", "");
+        String token = hearder.replace("Bearer","");
          // Validar o token e retornar o email ou null
         return TokenUtil.validarToken(token);
     }

@@ -1,15 +1,17 @@
 package br.sousa.Projeto.login.conexao.controller;
 
+import br.sousa.Projeto.login.conexao.dto.SenhaDTO;
 import br.sousa.Projeto.login.conexao.dto.UsuarioDto;
+import br.sousa.Projeto.login.conexao.dto.UsuarioRaquastDTO;
+import br.sousa.Projeto.login.conexao.dto.UsuarioResponseDTO;
 import br.sousa.Projeto.login.conexao.service.UsuarioService;
 
 import br.sousa.Projeto.login.conexao.util.AuthUtil;
-import br.sousa.Projeto.login.conexao.util.Validacoes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -17,62 +19,33 @@ public class UsuarioController {
     @Autowired
     private UsuarioService service;
     @Autowired
-    private Validacoes validador;
-    @Autowired
     private AuthUtil authUtil;
-
-boolean senhaValida;
-boolean emailValido;
 
     @PostMapping("/cadastro")
      public ResponseEntity<String> cadastrar(@RequestBody UsuarioDto usuario){
-        emailValido = validador.validarEmail(usuario.getEmail());
+        try {
+            service.cadastrar(usuario);
 
-        if(!emailValido){
-            return ResponseEntity.ok("E-mail invalido!");
+            return ResponseEntity.ok("Usuario cadastrado");
+
+        }catch (RuntimeException e){
+            return ResponseEntity.status(400).body(e.getMessage());
         }
-
-        boolean nomeValido = validador.validarNome(usuario.getNome());
-
-        if(!nomeValido){
-            return ResponseEntity.ok("Nome não pode ser vazio!");
-        }
-
-        senhaValida = validador.validarSenha(usuario.getSenha());
-
-        if(!senhaValida){
-            return ResponseEntity.badRequest().body("Senha não pode ser vazia!");
-        }
-
-        service.cadastrar(usuario);
-
-        return ResponseEntity.ok("Usuario cadastrado");
-
      }
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UsuarioDto request){
+    public ResponseEntity<?> login(@RequestBody UsuarioDto request){
 
-        emailValido = validador.validarEmail(request.getEmail());
+        try {
+            service.login(request.getEmail(), request.getSenha());
+            return ResponseEntity.ok(service.buscarPorEmail(request.getEmail()));
 
-        if(!emailValido){
-            return ResponseEntity.badRequest().body("E-mail invalido!");
+        }catch (RuntimeException e){
+            return ResponseEntity.status(400).body(e.getMessage());
         }
 
-        senhaValida = validador.validarSenha(request.getSenha());
 
-        if(!senhaValida){
-            return ResponseEntity.badRequest().body("Senha invalida!");
-        }
-
-        String token = service.login(request.getEmail(), request.getSenha());
-
-        if(token == null){
-            return ResponseEntity.badRequest().body("E-mail ou senha invalido! Tente novamente.");
-        }else {
-            return ResponseEntity.ok(token);
-        }
     }
-     @GetMapping("/usuarios")
+     @GetMapping("/admin")
      public ResponseEntity<?> heard(@RequestHeader("Authorization") String hearder){
 
         String email = authUtil.validarHearder(hearder);
@@ -82,6 +55,53 @@ boolean emailValido;
         }
         return ResponseEntity.ok(service.lista());
      }
+       @GetMapping("/me")
+     public ResponseEntity<?> usuario(@RequestHeader("Authorization") String hearder){
+        String user = authUtil.validarHearder(hearder);
+           Map<String,Object> response = new LinkedHashMap<>();
+
+        if(user == null){
+            return ResponseEntity.status(401).body("Usuario não encontrado");
+        }
+          try {
+              UsuarioResponseDTO usuario = service.buscarPorToken(user);
+
+              response.put("mensagem", "Sucesso!");
+              response.put("dados", usuario);
+              return ResponseEntity.ok(response);
+
+          }catch (RuntimeException e){
+              return ResponseEntity.status(400).body(e.getMessage());
+          }
+     }
+     @PutMapping("/me")
+     public ResponseEntity<?> atualizar(@RequestHeader("Authorization") String hearder, @RequestBody UsuarioRaquastDTO dados){
+        String token = authUtil.validarHearder(hearder);
+
+            try {
+                UsuarioRaquastDTO usuarioAtualizar = service.atualizar(token, dados);
+                return ResponseEntity.ok(usuarioAtualizar);
+
+            }catch (RuntimeException e){
+
+                return ResponseEntity.status(400).body(e.getMessage());
+            }
+     }
+
+     @PutMapping("/senha")
+     public ResponseEntity<?> atualizarSenha(@RequestHeader("Authorization") String hearder, @RequestBody SenhaDTO dados){
+
+        String token = authUtil.validarHearder(hearder);
+
+              try {
+                  service.atualizarSenha(token, dados);
+                  return ResponseEntity.ok("Senha Atualizada com sucesso");
+
+              }catch (RuntimeException e){
+                  return ResponseEntity.status(400).body(e.getMessage());
+              }
+     }
+
 
      @DeleteMapping("/me")
      public ResponseEntity<String> delete(@RequestHeader("Authorization") String hearder){
