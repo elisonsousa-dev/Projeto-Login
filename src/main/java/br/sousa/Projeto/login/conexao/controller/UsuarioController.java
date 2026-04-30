@@ -1,8 +1,8 @@
 package br.sousa.Projeto.login.conexao.controller;
 
-import br.sousa.Projeto.login.conexao.dto.SenhaDTO;
-import br.sousa.Projeto.login.conexao.dto.UsuarioDto;
-import br.sousa.Projeto.login.conexao.dto.UsuarioRaquastDTO;
+import br.sousa.Projeto.login.conexao.dto.AtualizarSenhaDTO;
+import br.sousa.Projeto.login.conexao.dto.UsuarioRequestDto;
+import br.sousa.Projeto.login.conexao.dto.UsuarioResumoDTO;
 import br.sousa.Projeto.login.conexao.dto.UsuarioResponseDTO;
 import br.sousa.Projeto.login.conexao.service.UsuarioService;
 
@@ -21,28 +21,38 @@ public class UsuarioController {
     @Autowired
     private AuthUtil authUtil;
 
-    @PostMapping("/cadastro")
-     public ResponseEntity<String> cadastrar(@RequestBody UsuarioDto usuario){
-        try {
-            service.cadastrar(usuario);
+    Map<String,Object> response = new LinkedHashMap<>();
 
-            return ResponseEntity.ok("Usuario cadastrado");
+    @PostMapping("/cadastro")
+     public ResponseEntity<?> cadastrar(@RequestBody UsuarioRequestDto usuario){
+
+        try {
+            service.cadastrarUsuario(usuario);
+            response.put("Mensagem","Usuario cadastrado");
+
+            return ResponseEntity.ok(response);
 
         }catch (RuntimeException e){
-            return ResponseEntity.status(400).body(e.getMessage());
+            response.put("Mensagem", e.getMessage());
+
+            return ResponseEntity.status(400).body(response);
+
         }
      }
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UsuarioDto request){
+    public ResponseEntity<?> login(@RequestBody UsuarioRequestDto request){
 
         try {
             service.login(request.getEmail(), request.getSenha());
+
             return ResponseEntity.ok(service.buscarPorEmail(request.getEmail()));
 
-        }catch (RuntimeException e){
-            return ResponseEntity.status(400).body(e.getMessage());
-        }
 
+        }catch (RuntimeException e){
+            response.put("Mensagem", e.getMessage());
+            return ResponseEntity.status(400).body(request);
+
+        }
 
     }
      @GetMapping("/admin")
@@ -51,18 +61,17 @@ public class UsuarioController {
         String email = authUtil.validarHearder(hearder);
 
         if(email == null){
-            return ResponseEntity.status(401).body("Usuário não autorizado!");
+            response.put("Mensagem", "Usuário não autorizado!");
+            return ResponseEntity.status(401).body(response);
         }
         return ResponseEntity.ok(service.lista());
      }
+
        @GetMapping("/me")
      public ResponseEntity<?> usuario(@RequestHeader("Authorization") String hearder){
         String user = authUtil.validarHearder(hearder);
-           Map<String,Object> response = new LinkedHashMap<>();
 
-        if(user == null){
-            return ResponseEntity.status(401).body("Usuario não encontrado");
-        }
+
           try {
               UsuarioResponseDTO usuario = service.buscarPorToken(user);
 
@@ -71,47 +80,59 @@ public class UsuarioController {
               return ResponseEntity.ok(response);
 
           }catch (RuntimeException e){
-              return ResponseEntity.status(400).body(e.getMessage());
+              response.put("Mensagem:", e.getMessage());
+
+              return ResponseEntity.status(400).body(response);
+
           }
      }
      @PutMapping("/me")
-     public ResponseEntity<?> atualizar(@RequestHeader("Authorization") String hearder, @RequestBody UsuarioRaquastDTO dados){
+     public ResponseEntity<?> atualizarDados(@RequestHeader("Authorization") String hearder, @RequestBody UsuarioResumoDTO dados){
         String token = authUtil.validarHearder(hearder);
 
             try {
-                UsuarioRaquastDTO usuarioAtualizar = service.atualizar(token, dados);
-                return ResponseEntity.ok(usuarioAtualizar);
+                UsuarioResumoDTO usuarioAtualizar = service.atualizarDados(token, dados);
+                response.put("Mensagem", "Dados atualizados!");
+                response.put("Dados", usuarioAtualizar);
+
+                return ResponseEntity.ok(response);
 
             }catch (RuntimeException e){
+               response.put("Mensagem", e.getMessage());
 
-                return ResponseEntity.status(400).body(e.getMessage());
+                return ResponseEntity.status(400).body(response);
             }
      }
 
      @PutMapping("/senha")
-     public ResponseEntity<?> atualizarSenha(@RequestHeader("Authorization") String hearder, @RequestBody SenhaDTO dados){
+     public ResponseEntity<?> atualizarSenha(@RequestHeader("Authorization") String hearder, @RequestBody AtualizarSenhaDTO dados){
 
         String token = authUtil.validarHearder(hearder);
 
               try {
                   service.atualizarSenha(token, dados);
-                  return ResponseEntity.ok("Senha Atualizada com sucesso");
+                  response.put("Mensagem", "Senha Atualizada com sucesso");
+                  return ResponseEntity.ok(response);
 
               }catch (RuntimeException e){
-                  return ResponseEntity.status(400).body(e.getMessage());
+                  response.put("Mensagem", e.getMessage());
+                  return ResponseEntity.status(400).body(response);
               }
      }
 
 
      @DeleteMapping("/me")
-     public ResponseEntity<String> delete(@RequestHeader("Authorization") String hearder){
+     public ResponseEntity<?> delete(@RequestHeader("Authorization") String hearder){
         String token = authUtil.validarHearder(hearder);
 
         if(token == null){
-            return ResponseEntity.status(401).body("O usuário não existe!");
+            response.put("Mensagem", "O usuário não existe!");
+            return ResponseEntity.status(401).body(response);
         }
         service.delete(token);
-             return ResponseEntity.ok("Conta excluida!");
+        response.put("Mensagem:", "Conta Excluida!");
+
+             return ResponseEntity.ok(response);
      }
 
 }

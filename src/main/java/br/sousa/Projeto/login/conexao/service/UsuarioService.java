@@ -23,7 +23,13 @@ public class UsuarioService {
     private Validacoes validador;
 
 
-    public boolean cadastrar(UsuarioDto usuario){
+
+    public boolean cadastrarUsuario(UsuarioRequestDto usuario){
+         Usuario usuarioExt = repo.findByEmail(usuario.getEmail());
+
+         if(usuarioExt != null){
+             throw new RuntimeException("Este E-mail já está sendo utilizado");
+         }
 
         boolean nomeValido = validador.validarNome(usuario.getNome());
 
@@ -96,9 +102,10 @@ public class UsuarioService {
         }
 
     }
-    public ResponseDto buscarPorEmail(String email){
+
+    public LoginResponseDto buscarPorEmail(String email){
         Usuario usuario = repo.findByEmail(email);
-        ResponseDto user = new ResponseDto();
+        LoginResponseDto user = new LoginResponseDto();
 
         user.setToken(usuario.getToken());
         user.setId(usuario.getId());
@@ -123,8 +130,13 @@ public class UsuarioService {
 
         return usuarios;
     }
-    public UsuarioRaquastDTO atualizar( String token, UsuarioRaquastDTO dados){
+    public UsuarioResumoDTO atualizarDados(String token, UsuarioResumoDTO dados){
         Usuario usuario = repo.findByEmail(token);
+        Usuario email = repo.findByEmail(dados.getEmail());
+
+        if(email != null){
+            throw new RuntimeException("E-mail já está sendo utilizado!");
+        }
 
         if(usuario == null){
            throw new RuntimeException("Usuário não encontrado!");
@@ -141,24 +153,30 @@ public class UsuarioService {
             throw new RuntimeException("Nome inválido");
         }
 
-        usuario.setNome(dados.getNome());
-        usuario.setEmail(dados.getEmail());
+            usuario.setNome(dados.getNome());
+            usuario.setEmail(dados.getEmail());
 
-        repo.save(usuario);
 
-        return new UsuarioRaquastDTO(usuario);
+            repo.save(usuario);
+
+            return new UsuarioResumoDTO(usuario);
 
     }
-    public void atualizarSenha(String token, SenhaDTO dados){
+    public void atualizarSenha(String token, AtualizarSenhaDTO dados){
         Usuario usuario = repo.findByEmail(token);
 
         if(usuario == null){
             throw  new RuntimeException("Usuário não encontrado");
 
         }
+
       if(!BCrypt.checkpw(dados.getSenhaAtual(), usuario.getSenha())){
           throw new RuntimeException("Senha atual incorreta!");
 
+      }
+
+      if(BCrypt.checkpw(dados.getNovaSenha(), usuario.getSenha())){
+          throw new RuntimeException("A senha não pode ser igual a atual");
       }
 
         if(dados.getNovaSenha() == null || dados.getNovaSenha().isEmpty()){
@@ -178,9 +196,9 @@ public class UsuarioService {
 
     }
 
-    public List<ResponseDto> lista(){
+    public List<UsuarioResponseDTO> lista(){
         return repo.findAll().stream().map(usuario -> {
-            ResponseDto dto = new ResponseDto();
+            UsuarioResponseDTO dto = new UsuarioResponseDTO();
             dto.setId(usuario.getId());
             dto.setNome(usuario.getNome());
             dto.setEmail(usuario.getEmail());

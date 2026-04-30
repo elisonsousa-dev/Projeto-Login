@@ -9,15 +9,15 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 @Component
-public class UsuarioRaquastDTO {
+public class UsuarioResumoDTO {
     private String nome;
     private String email;
 
-    public UsuarioRaquastDTO(){
+    public UsuarioResumoDTO(){
 
     }
 
-    public UsuarioRaquastDTO(Usuario usuario){
+    public UsuarioResumoDTO(Usuario usuario){
         this.nome = usuario.getNome();
         this.email = usuario.getEmail();
     }
