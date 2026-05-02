@@ -25,12 +25,6 @@ public class UsuarioService {
 
 
     public boolean cadastrarUsuario(UsuarioRequestDto usuario){
-         Usuario usuarioExt = repo.findByEmail(usuario.getEmail());
-
-         if(usuarioExt != null){
-             throw new RuntimeException("Este E-mail já está sendo utilizado");
-         }
-
         boolean nomeValido = validador.validarNome(usuario.getNome());
 
         if(!nomeValido){
@@ -42,6 +36,12 @@ public class UsuarioService {
         if(!emailValido){
             throw new RuntimeException("E-mail inválido!");
         }
+
+         Usuario usuarioExt = repo.findByEmail(usuario.getEmail());
+
+         if(usuarioExt != null){
+             throw new RuntimeException("Este E-mail já está sendo utilizado");
+         }
 
         boolean senhaValida = validador.validarSenha(usuario.getSenha());
 
@@ -89,12 +89,13 @@ public class UsuarioService {
         }
 
         String token = TokenUtil.gerarToken(usuario.getEmail());
-        usuario.setToken(token);
+
 
         return token;
     }
     public void delete(String email) {
         Usuario usuario = repo.findByEmail(email);
+
 
         if(usuario != null){
 
@@ -107,7 +108,6 @@ public class UsuarioService {
         Usuario usuario = repo.findByEmail(email);
         LoginResponseDto user = new LoginResponseDto();
 
-        user.setToken(usuario.getToken());
         user.setId(usuario.getId());
         user.setNome(usuario.getNome());
         user.setEmail(usuario.getEmail());
@@ -132,19 +132,9 @@ public class UsuarioService {
     }
     public UsuarioResumoDTO atualizarDados(String token, UsuarioResumoDTO dados){
         Usuario usuario = repo.findByEmail(token);
-        Usuario email = repo.findByEmail(dados.getEmail());
-
-        if(email != null){
-            throw new RuntimeException("E-mail já está sendo utilizado!");
-        }
 
         if(usuario == null){
            throw new RuntimeException("Usuário não encontrado!");
-        }
-        boolean emailValido = validador.validarEmail(dados.getEmail());
-
-        if(!emailValido){
-            throw new RuntimeException("E-mail inválido");
         }
 
         boolean nomeValido = validador.validarNome(dados.getNome());
@@ -153,9 +143,20 @@ public class UsuarioService {
             throw new RuntimeException("Nome inválido");
         }
 
+        boolean emailValido = validador.validarEmail(dados.getEmail());
+
+        if(!emailValido){
+            throw new RuntimeException("E-mail inválido");
+        }
+
+        Usuario email = repo.findByEmail(dados.getEmail());
+
+        if(email != null){
+            throw new RuntimeException("E-mail já está sendo utilizado!");
+        }
+
             usuario.setNome(dados.getNome());
             usuario.setEmail(dados.getEmail());
-
 
             repo.save(usuario);
 
@@ -176,7 +177,7 @@ public class UsuarioService {
       }
 
       if(BCrypt.checkpw(dados.getNovaSenha(), usuario.getSenha())){
-          throw new RuntimeException("A senha não pode ser igual a atual");
+          throw new RuntimeException("A Sua nova senha não pode ser igual a atual");
       }
 
         if(dados.getNovaSenha() == null || dados.getNovaSenha().isEmpty()){
