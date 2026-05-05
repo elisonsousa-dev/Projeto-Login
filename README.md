@@ -51,7 +51,7 @@ DELETE /me
 Sistema conectado com o banco de dados MySQL, Estruturas de validaçoes, funçao de Criptografia de senha para a segurança do usuário.
 Sistema conectado com rotas (Apis rest), (JWT) Gerar token para validar acesso dos usuários.
 Em breve mais atualizações para a melhoria do sistema de login.
-
+Em breve melhoria na criptografia de senha, com a criptografia em argo2id, é uma criptografia mais robusta e a melhor atualmente
 ## 👨‍💻 Desenvolvedor
 Elison Sousa
 
