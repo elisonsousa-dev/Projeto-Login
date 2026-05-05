@@ -17,6 +17,7 @@ public class AuthUtil {
         if(token == null){
             return null;
         }
+
         return TokenUtil.validarRole(token);
     }
     public String getEmail(String header){

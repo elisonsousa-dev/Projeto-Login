@@ -17,12 +17,7 @@ public class Usuario {
     private String email;
     private String senha;
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
+    private String role;
 
-    public enum Role{
-      USER,
-      ADMIN
-    }
 
 }

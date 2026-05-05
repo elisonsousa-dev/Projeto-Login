@@ -4,10 +4,11 @@ import br.sousa.Projeto.login.conexao.dto.*;
 import br.sousa.Projeto.login.conexao.service.UsuarioService;
 
 import br.sousa.Projeto.login.conexao.util.AuthUtil;
-import br.sousa.Projeto.login.conexao.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -18,6 +19,7 @@ public class UsuarioController {
     private UsuarioService service;
     @Autowired
     private AuthUtil authUtil;
+
 
 
     Map<String,Object> response = new LinkedHashMap<>();
@@ -54,15 +56,12 @@ public class UsuarioController {
                     .body(new ResponseDTO("Token inválido", 401));
         }
 
-        String role = TokenUtil.validarRole(token);
-         System.out.println("role"+ role);
-        
-
-        if(!"ADMIN".equals(role)){
+        if(!"ADMIN".equals(token)){
             return ResponseEntity.status(403).body(new ResponseDTO("Acesso negado!", 403));
         }
-
-        return ResponseEntity.ok(service.lista());
+         response.put("mensagem", "| PAINEL ADMIN |");
+        response.put("users", service.lista());
+        return ResponseEntity.ok(response);
      }
 
        @GetMapping("/me")
