@@ -12,9 +12,10 @@ public class TokenUtil {
 
     private static final String SECRET = "shgfhghsgfbxgewh";
 
-    public static String gerarToken(String email){
+    public static String gerarToken(String email, String role){
         return JWT.create()
                 .withSubject(email)
+                .withClaim("role", role)
                 .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
                 .sign(Algorithm.HMAC256(SECRET));
     }
@@ -31,6 +32,17 @@ public class TokenUtil {
             return null;
         }
 
+    }
+    public static String validarRole(String token){
+        try {
 
+            DecodedJWT jwt = JWT.require(Algorithm.HMAC256(SECRET))
+                    .build()
+                    .verify(token);
+
+            return jwt.getClaim("role").asString();
+        }catch (JWTVerificationException e){
+            return null;
+        }
     }
 }

@@ -51,12 +51,12 @@ public class UsuarioService {
 
         Usuario usuario1 = new Usuario();
 
+        String hash =  SenhaUtil.gerarHash(usuario.getSenha());
+
         usuario1.setNome(usuario.getNome());
         usuario1.setEmail(usuario.getEmail());
-        usuario1.setSenha(usuario.getSenha());
-
-      String hash =  SenhaUtil.gerarHash(usuario.getSenha());
         usuario1.setSenha(hash);
+        usuario1.setRole(Usuario.Role.valueOf("USER"));
 
         repo.save(usuario1);
 
@@ -88,7 +88,7 @@ public class UsuarioService {
             throw new RuntimeException("Senha incorreta!");
         }
 
-        String token = TokenUtil.gerarToken(usuario.getEmail());
+        String token = TokenUtil.gerarToken(usuario.getEmail(), String.valueOf(usuario.getRole()));
 
 
         return token;
@@ -111,6 +111,7 @@ public class UsuarioService {
         user.setId(usuario.getId());
         user.setNome(usuario.getNome());
         user.setEmail(usuario.getEmail());
+        user.setRole(String.valueOf(usuario.getRole()));
 
         return user;
 

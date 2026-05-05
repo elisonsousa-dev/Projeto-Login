@@ -13,6 +13,7 @@ public class LoginResponseDto {
 
     private String nome;
     private String email;
+    private String role;
 
 
 }

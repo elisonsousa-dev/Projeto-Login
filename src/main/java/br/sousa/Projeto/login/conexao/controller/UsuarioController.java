@@ -4,6 +4,7 @@ import br.sousa.Projeto.login.conexao.dto.*;
 import br.sousa.Projeto.login.conexao.service.UsuarioService;
 
 import br.sousa.Projeto.login.conexao.util.AuthUtil;
+import br.sousa.Projeto.login.conexao.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ public class UsuarioController {
     private UsuarioService service;
     @Autowired
     private AuthUtil authUtil;
+
 
     Map<String,Object> response = new LinkedHashMap<>();
 
@@ -42,22 +44,30 @@ public class UsuarioController {
 
     }
      @GetMapping("/admin")
-     public ResponseEntity<?> heard(@RequestHeader("Authorization") String hearder){
+     public ResponseEntity<?> heard(@RequestHeader("Authorization") String header){
 
-        String email = authUtil.validarHearder(hearder);
+        String token = authUtil.getRole(header);
 
-        if(email == null){
+        if(token == null){
             return ResponseEntity
                     .status(401)
-                    .body(new ResponseDTO("Usuário não autorizado", 401));
+                    .body(new ResponseDTO("Token inválido", 401));
         }
-        response.put("usuarios", service.lista());
-        return ResponseEntity.ok(response);
+
+        String role = TokenUtil.validarRole(token);
+         System.out.println("role"+ role);
+        
+
+        if(!"ADMIN".equals(role)){
+            return ResponseEntity.status(403).body(new ResponseDTO("Acesso negado!", 403));
+        }
+
+        return ResponseEntity.ok(service.lista());
      }
 
        @GetMapping("/me")
      public ResponseEntity<?> usuario(@RequestHeader("Authorization") String hearder){
-        String user = authUtil.validarHearder(hearder);
+        String user = authUtil.getEmail(hearder);
 
               UsuarioResponseDTO usuario = service.buscarPorToken(user);
 
@@ -68,7 +78,7 @@ public class UsuarioController {
      }
      @PutMapping("/me")
      public ResponseEntity<?> atualizarDados(@RequestHeader("Authorization") String hearder, @RequestBody UsuarioResumoDTO dados){
-        String token = authUtil.validarHearder(hearder);
+        String token = authUtil.getEmail(hearder);
 
                 UsuarioResumoDTO usuarioAtualizar = service.atualizarDados(token, dados);
                 response.put("mensagem", "Dados atualizados!");
@@ -81,7 +91,7 @@ public class UsuarioController {
      @PutMapping("/senha")
      public ResponseEntity<?> atualizarSenha(@RequestHeader("Authorization") String hearder, @RequestBody AtualizarSenhaDTO dados){
 
-        String token = authUtil.validarHearder(hearder);
+        String token = authUtil.getEmail(hearder);
 
                   service.atualizarSenha(token, dados);
 
@@ -91,10 +101,9 @@ public class UsuarioController {
 
      }
 
-
      @DeleteMapping("/me")
      public ResponseEntity<?> delete(@RequestHeader("Authorization") String hearder){
-        String token = authUtil.validarHearder(hearder);
+        String token = authUtil.getRole(hearder);
 
         if(token == null){
             return ResponseEntity.status(404).body(new ResponseDTO("O usuário não existe", 404));

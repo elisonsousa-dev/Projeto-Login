@@ -1,9 +1,6 @@
 package br.sousa.Projeto.login.conexao.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
@@ -19,5 +16,13 @@ public class Usuario {
     private String nome;
     private String email;
     private String senha;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    public enum Role{
+      USER,
+      ADMIN
+    }
 
 }
