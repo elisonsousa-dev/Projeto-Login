@@ -4,6 +4,7 @@ package br.sousa.Projeto.login.conexao.service;
 import br.sousa.Projeto.login.conexao.dto.*;
 import br.sousa.Projeto.login.conexao.model.Usuario;
 import br.sousa.Projeto.login.conexao.repository.UsuarioRepository;
+import br.sousa.Projeto.login.conexao.util.AuthUtil;
 import br.sousa.Projeto.login.conexao.util.SenhaUtil;
 import br.sousa.Projeto.login.conexao.util.TokenUtil;
 import br.sousa.Projeto.login.conexao.util.Validacoes;
@@ -21,6 +22,8 @@ public class UsuarioService {
     private UsuarioRepository repo;
     @Autowired
     private Validacoes validador;
+    @Autowired
+    private AuthUtil authUtil;
 
 
 
@@ -56,7 +59,7 @@ public class UsuarioService {
         usuario1.setNome(usuario.getNome());
         usuario1.setEmail(usuario.getEmail());
         usuario1.setSenha(hash);
-        usuario1.setRole("USER");
+        usuario1.setRole(Usuario.Role.USER);
 
         repo.save(usuario1);
 
@@ -88,7 +91,7 @@ public class UsuarioService {
             throw new RuntimeException("Senha incorreta!");
         }
 
-        String token = TokenUtil.gerarToken(usuario.getEmail(), usuario.getRole());
+        String token = TokenUtil.gerarToken(usuario.getEmail(), usuario.getRole().name());
 
 
         return token;
@@ -111,7 +114,7 @@ public class UsuarioService {
         user.setId(usuario.getId());
         user.setNome(usuario.getNome());
         user.setEmail(usuario.getEmail());
-        user.setRole(usuario.getRole());
+        user.setRole(usuario.getRole().name());
 
         return user;
 
@@ -195,7 +198,35 @@ public class UsuarioService {
 
         repo.save(usuario);
 
+    }
+    public Usuario setCargo(String token,String email, String role){
+        String emailValido = authUtil.getEmail(token);
 
+        if(email == null){
+            throw new RuntimeException("Token inválido");
+        }
+
+        Usuario solicitante = repo.findByEmail(emailValido);
+
+        if(solicitante == null){
+           throw new RuntimeException("O usuário não foi encontrado");
+        }
+
+        String validarRole = authUtil.getRole(token);
+
+       if(!Usuario.Role.CEO.name().equals(validarRole)){
+           throw new RuntimeException("Usuário não autorizado!");
+       }
+       Usuario alvo = repo.findByEmail(email);
+
+       if(alvo == null){
+           throw new RuntimeException("O usuário não existe");
+       }
+
+       alvo.setRole(Usuario.Role.valueOf(role));
+       repo.save(alvo);
+
+       return alvo;
     }
 
     public List<UsuarioResponseDTO> lista(){
@@ -207,4 +238,5 @@ public class UsuarioService {
             return dto;
         } ).toList();
     }
+
 }

@@ -1,13 +1,13 @@
 package br.sousa.Projeto.login.conexao.controller;
 
 import br.sousa.Projeto.login.conexao.dto.*;
+import br.sousa.Projeto.login.conexao.model.Usuario;
 import br.sousa.Projeto.login.conexao.service.UsuarioService;
 
 import br.sousa.Projeto.login.conexao.util.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,10 +19,6 @@ public class UsuarioController {
     private UsuarioService service;
     @Autowired
     private AuthUtil authUtil;
-
-
-
-    Map<String,Object> response = new LinkedHashMap<>();
 
     @PostMapping("/cadastro")
      public ResponseEntity<?> cadastrar(@RequestBody UsuarioRequestDto usuario){
@@ -36,14 +32,14 @@ public class UsuarioController {
     public ResponseEntity<?> login(@RequestBody UsuarioRequestDto request){
            String token = service.login(request.getEmail(), request.getSenha());
         LoginResponseDto user = service.buscarPorEmail(request.getEmail());
+        Map<String, Object> reponse = new LinkedHashMap<>();
 
-               response.put("mensagem", "Usuário logado!");
-               response.put("status", 200);
-               response.put("usuario", user);
-               response.put("token", token);
+             reponse.put("mensagem", "Usuário logado");
+             reponse.put("status", 200);
+             reponse.put("usuario", user);
+             reponse.put("token", token);
 
-            return ResponseEntity.status(200).body(response);
-
+            return ResponseEntity.ok(reponse);
     }
      @GetMapping("/admin")
      public ResponseEntity<?> heard(@RequestHeader("Authorization") String header){
@@ -56,12 +52,15 @@ public class UsuarioController {
                     .body(new ResponseDTO("Token inválido", 401));
         }
 
-        if(!"ADMIN".equals(token)){
+        if(!Usuario.Role.ADMIN.name().equals(token)){
             return ResponseEntity.status(403).body(new ResponseDTO("Acesso negado!", 403));
         }
-         response.put("mensagem", "| PAINEL ADMIN |");
-        response.put("users", service.lista());
-        return ResponseEntity.ok(response);
+         Map<String, Object> reponse = new LinkedHashMap<>();
+
+            reponse.put("mensagem", "| PAINEL ADMIN |");
+            reponse.put("users", service.lista());
+
+            return ResponseEntity.ok(reponse);
      }
 
        @GetMapping("/me")
@@ -69,22 +68,24 @@ public class UsuarioController {
         String user = authUtil.getEmail(hearder);
 
               UsuarioResponseDTO usuario = service.buscarPorToken(user);
+           Map<String, Object> reponse = new LinkedHashMap<>();
 
-              response.put("mensagem", "Sua Conta");
-              response.put("dados", usuario);
-              return ResponseEntity.ok(response);
+           reponse.put("mensagem", "Sua Conta");
+           reponse.put("dados",usuario);
 
+              return ResponseEntity.ok(reponse);
      }
      @PutMapping("/me")
      public ResponseEntity<?> atualizarDados(@RequestHeader("Authorization") String hearder, @RequestBody UsuarioResumoDTO dados){
         String token = authUtil.getEmail(hearder);
 
-                UsuarioResumoDTO usuarioAtualizar = service.atualizarDados(token, dados);
-                response.put("mensagem", "Dados atualizados!");
-                response.put("dados", usuarioAtualizar);
+        UsuarioResumoDTO usuarioAtualizar = service.atualizarDados(token, dados);
 
-                return ResponseEntity.status(200).body(response);
+        Map<String, Object> reponse = new LinkedHashMap<>();
+                reponse.put("mensagem", "Dados atualizados:");
+                reponse.put("dados", usuarioAtualizar);
 
+                return ResponseEntity.ok(reponse);
      }
 
      @PutMapping("/senha")
@@ -98,6 +99,14 @@ public class UsuarioController {
                           .status(200)
                           .body(new ResponseDTO("Senha atualizada com sucesso", 200));
 
+     }
+     @PutMapping("/ADD")
+     public ResponseEntity<?> atualizarUser(@RequestHeader("Authorization") String header, @RequestBody UserRequestDTO dados){
+
+        service.setCargo(header ,dados.getEmail(), dados.getRole());
+
+        return ResponseEntity
+                .ok(new ResponseDTO("Dados atualizados", 200));
      }
 
      @DeleteMapping("/me")
