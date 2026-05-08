@@ -24,10 +24,12 @@ public class UsuarioService {
     private Validacoes validador;
     @Autowired
     private AuthUtil authUtil;
+    @Autowired
+    private TokenUtil tokenUtil;
 
 
 
-    public boolean cadastrarUsuario(UsuarioRequestDto usuario){
+    public void cadastrarUsuario(UsuarioRequestDto usuario){
         boolean nomeValido = validador.validarNome(usuario.getNome());
 
         if(!nomeValido){
@@ -63,7 +65,6 @@ public class UsuarioService {
 
         repo.save(usuario1);
 
-       return true;
     }
 
     public String login(String email, String senha){
@@ -91,19 +92,23 @@ public class UsuarioService {
             throw new RuntimeException("Senha incorreta!");
         }
 
-        String token = TokenUtil.gerarToken(usuario.getEmail(), usuario.getRole().name());
+        return tokenUtil.gerarToken(usuario.getEmail(), usuario.getRole().name());
 
-
-        return token;
     }
-    public void delete(String email) {
-        Usuario usuario = repo.findByEmail(email);
+    public void delete(String email){
+        String tokenEmail = authUtil.getEmail(email);
 
-
-        if(usuario != null){
-
-            repo.delete(usuario);
+        if(tokenEmail == null){
+            throw new RuntimeException("Token inválido");
         }
+
+        Usuario usuario = repo.findByEmail(tokenEmail);
+
+        if(usuario == null){
+            throw new RuntimeException("O usuário não foi encontrado");
+        }
+
+        repo.delete(usuario);
 
     }
 
@@ -195,21 +200,20 @@ public class UsuarioService {
         dados.setNovaSenha(usuario.getSenha());
         dados.setSenhaAtual(usuario.getSenha());
 
-
         repo.save(usuario);
 
     }
-    public Usuario setCargo(String token,String email, String role){
-        String emailValido = authUtil.getEmail(token);
+    public void setCargo(String token,String email, String role){
+        String tokenEmail = authUtil.getEmail(token);
 
-        if(email == null){
+        if(tokenEmail == null){
             throw new RuntimeException("Token inválido");
         }
 
-        Usuario solicitante = repo.findByEmail(emailValido);
+        Usuario solicitante = repo.findByEmail(tokenEmail);
 
         if(solicitante == null){
-           throw new RuntimeException("O usuário não foi encontrado");
+           throw new RuntimeException("Seu token expirou");
         }
 
         String validarRole = authUtil.getRole(token);
@@ -217,16 +221,51 @@ public class UsuarioService {
        if(!Usuario.Role.CEO.name().equals(validarRole)){
            throw new RuntimeException("Usuário não autorizado!");
        }
+
+       boolean emailValido = validador.validarEmail(email);
+
+       if(!emailValido){
+           throw new RuntimeException("Email invalido, Digite o formato correto");
+       }
+
        Usuario alvo = repo.findByEmail(email);
 
        if(alvo == null){
-           throw new RuntimeException("O usuário não existe");
+           throw new RuntimeException("O usuário não foi encontrado");
+       }
+
+       if(role.isEmpty()){
+           throw new RuntimeException("O cargo não pode ser vazio");
+       }
+         role = role.toUpperCase();
+
+       if(alvo.getRole() == Usuario.Role.valueOf(role)){
+           throw new RuntimeException("Usuário já possui esse cargo");
        }
 
        alvo.setRole(Usuario.Role.valueOf(role));
        repo.save(alvo);
 
-       return alvo;
+    }
+
+    public void admin(String header){
+        String email = authUtil.getEmail(header);
+
+        if(email == null){
+            throw new RuntimeException("token inválido");
+        }
+
+        Usuario usuario = repo.findByEmail(email);
+
+        if(usuario == null){
+            throw new RuntimeException("O usuário não foi encontrado");
+        }
+
+        String role = authUtil.getRole(header);
+
+        if(!Usuario.Role.ADMIN.name().equals(role) && !Usuario.Role.CEO.name().equals(role)){
+            throw new RuntimeException("Acesso negado");
+        }
     }
 
     public List<UsuarioResponseDTO> lista(){
@@ -235,6 +274,7 @@ public class UsuarioService {
             dto.setId(usuario.getId());
             dto.setNome(usuario.getNome());
             dto.setEmail(usuario.getEmail());
+            dto.setCargo(String.valueOf(usuario.getRole()));
             return dto;
         } ).toList();
     }

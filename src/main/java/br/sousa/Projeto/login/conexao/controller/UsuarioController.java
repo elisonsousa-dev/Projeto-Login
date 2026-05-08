@@ -1,7 +1,7 @@
 package br.sousa.Projeto.login.conexao.controller;
 
 import br.sousa.Projeto.login.conexao.dto.*;
-import br.sousa.Projeto.login.conexao.model.Usuario;
+
 import br.sousa.Projeto.login.conexao.service.UsuarioService;
 
 import br.sousa.Projeto.login.conexao.util.AuthUtil;
@@ -21,47 +21,39 @@ public class UsuarioController {
     private AuthUtil authUtil;
 
     @PostMapping("/cadastro")
-     public ResponseEntity<?> cadastrar(@RequestBody UsuarioRequestDto usuario){
+    public ResponseEntity<?> cadastrar(@RequestBody UsuarioRequestDto usuario) {
 
-            service.cadastrarUsuario(usuario);
-            return ResponseEntity
-                    .status(201)
-                    .body(new ResponseDTO("Usuário cadastrado",201));
-     }
+        service.cadastrarUsuario(usuario);
+        return ResponseEntity
+                .status(201)
+                .body(new ResponseDTO("Usuário cadastrado", 201));
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UsuarioRequestDto request){
-           String token = service.login(request.getEmail(), request.getSenha());
+    public ResponseEntity<?> login(@RequestBody UsuarioRequestDto request) {
+        String token = service.login(request.getEmail(), request.getSenha());
         LoginResponseDto user = service.buscarPorEmail(request.getEmail());
         Map<String, Object> reponse = new LinkedHashMap<>();
 
-             reponse.put("mensagem", "Usuário logado");
-             reponse.put("status", 200);
-             reponse.put("usuario", user);
-             reponse.put("token", token);
+        reponse.put("mensagem", "Usuário logado");
+        reponse.put("status", 200);
+        reponse.put("usuario", user);
+        reponse.put("token", token);
 
-            return ResponseEntity.ok(reponse);
+        return ResponseEntity.ok(reponse);
     }
-     @GetMapping("/admin")
-     public ResponseEntity<?> heard(@RequestHeader("Authorization") String header){
 
-        String token = authUtil.getRole(header);
+    @GetMapping("/admin")
+    public ResponseEntity<?> heard(@RequestHeader("Authorization") String header) {
 
-        if(token == null){
-            return ResponseEntity
-                    .status(401)
-                    .body(new ResponseDTO("Token inválido", 401));
-        }
+        service.admin(header);
+        Map<String, Object> response = new LinkedHashMap<>();
 
-        if(!Usuario.Role.ADMIN.name().equals(token)){
-            return ResponseEntity.status(403).body(new ResponseDTO("Acesso negado!", 403));
-        }
-         Map<String, Object> reponse = new LinkedHashMap<>();
+                 response.put("mensagem", "| PAINEL ADMIN |");
+                 response.put("users", service.lista());
+                 return ResponseEntity.ok(response);
 
-            reponse.put("mensagem", "| PAINEL ADMIN |");
-            reponse.put("users", service.lista());
-
-            return ResponseEntity.ok(reponse);
-     }
+}
 
        @GetMapping("/me")
      public ResponseEntity<?> usuario(@RequestHeader("Authorization") String hearder){
@@ -101,7 +93,7 @@ public class UsuarioController {
 
      }
      @PutMapping("/ADD")
-     public ResponseEntity<?> atualizarUser(@RequestHeader("Authorization") String header, @RequestBody UserRequestDTO dados){
+     public ResponseEntity<?> atualizarCargo(@RequestHeader("Authorization") String header, @RequestBody UserRequestDTO dados){
 
         service.setCargo(header ,dados.getEmail(), dados.getRole());
 
@@ -111,13 +103,10 @@ public class UsuarioController {
 
      @DeleteMapping("/me")
      public ResponseEntity<?> delete(@RequestHeader("Authorization") String hearder){
-        String token = authUtil.getRole(hearder);
 
-        if(token == null){
-            return ResponseEntity.status(404).body(new ResponseDTO("O usuário não existe", 404));
-        }
-        service.delete(token);
-             return ResponseEntity.ok(new ResponseDTO("Conta excluida", 200));
+        service.delete(hearder);
+        return ResponseEntity
+                .ok(new ResponseDTO("Conta excluida", 200));
      }
 
 }
