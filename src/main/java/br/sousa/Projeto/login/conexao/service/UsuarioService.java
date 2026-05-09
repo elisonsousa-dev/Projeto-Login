@@ -136,6 +136,7 @@ public class UsuarioService {
         usuarios.setId(usuario.getId());
         usuarios.setNome(usuario.getNome());
         usuarios.setEmail(usuario.getEmail());
+        usuarios.setCargo(String.valueOf(usuario.getRole()));
 
         return usuarios;
     }
