@@ -43,6 +43,15 @@ PUT /senha
 ### Delete usuário
 DELETE /me
 
+## URL DA API 
+Abra o postman e use essa url com os entpoits acima 👉
+https://projeto-login-production-d920.up.railway.app/usuarios
+
+ou 
+
+Abra com o swagger, so colar no navegador e usar as rotas 👉
+https://projeto-login-production-d920.up.railway.app/swagger-ui/index.html
+
 ## Observações
 - Senhas são armazenadas com criptografia BCrypt
 - Projeto focado em estudo de API REST
